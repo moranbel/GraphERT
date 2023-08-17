@@ -1,0 +1,10 @@
+networkx
+numpy
+pandas
+gensim
+node2vec
+matplotlib
+holoviews
+scikit-learn
+scipy
+python-dateutil
