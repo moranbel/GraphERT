@@ -1,35 +1,39 @@
+import itertools
+
 from node2vec import Node2Vec
 import pandas as pd
 import numpy as np
 import networkx as nx
+from tqdm import tqdm
 
 from graphert.processing_data import load_dataset
 
 
-def create_random_walks(graph_nx: nx.Graph, graphs: dict, qs: list, walk_lengths: list, num_walks_list: list,
+def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps:list, qs: list, walk_lengths: list, num_walks_list: list,
                         dataset_name: str):
     cc_nodes = sorted(nx.connected_components(graph_nx.to_undirected()), key=len, reverse=True)[0]  # biggest cc
-    for q in qs:
-        for walk_len in walk_lengths:
-            for num_walks in num_walks_list:
-                print(f"q={q}, walk_len={walk_len}, num_walks={num_walks}")
-                file_path = f'datasets/{dataset_name}/paths_q{q}_w_{walk_len}_num_walk_{num_walks}.csv'
-                data_df_list = []
-                nodes = set()
-                for i, (time, graph) in enumerate(list(graphs.items())):
-                    print(time)
+    for walk_len in walk_lengths:
+        for num_walks in num_walks_list:
+            print(f"walk_len={walk_len}, num_walks={num_walks}")
+            file_path = f'datasets/{dataset_name}/paths_walk_len_{walk_len}_num_walks_{num_walks}.csv'
+            data_df_list = []
+            nodes = set()
+            p_q_pairs = list(itertools.product(ps, qs))
+            for i, (time, graph) in enumerate(list(graphs.items())):
+                print(time)
+                for (p, q) in tqdm(p_q_pairs, total=len(p_q_pairs)):
                     graph.remove_nodes_from(
                         [node for node in graph if node not in cc_nodes])  # remove nodes not in the biggest cc
                     graph = graph.to_undirected()
                     nodes = nodes.union(graph.nodes())
-                    n2v_model = Node2Vec(graph, num_walks=num_walks, walk_length=walk_len, q=q, workers=4, quiet=True)
+                    n2v_model = Node2Vec(graph, num_walks=num_walks, walk_length=walk_len, p=p, q=q, workers=4, quiet=True)
                     sents = [" ".join(sent) for sent in n2v_model.walks]
                     data_df_list.append(
-                        pd.DataFrame(np.array([sents, [time] * len(sents)]).T, columns=['sent', 'time']))
+                        pd.DataFrame(np.array([sents, [time] * len(sents), [p] * len(sents), [q] * len(sents)]).T,
+                                     columns=['sent', 'time', 'p', 'q']))
 
-                data_df = pd.concat(data_df_list)
-                data_df.to_csv(file_path)
-
+            data_df = pd.concat(data_df_list)
+            data_df.to_csv(file_path)
 
 if __name__ == '__main__':
     # create corpus
@@ -44,8 +48,9 @@ if __name__ == '__main__':
 
     graphs = {i: v for i, (k, v) in enumerate(graphs.items())}
 
-    qs = [0.5, 1, 0.25]
-    walk_lengths = [32, 64, 16]
-    num_walks_list = [10, 20]
 
-    create_random_walks(graph_nx, graphs, qs, walk_lengths, num_walks_list, dataset_name)
+    qs = [0.25, 0.5, 1, 2, 4]
+    ps = [0.25, 0.5, 1, 2, 4]
+    walk_lengths = [32, 64]
+    num_walks_list = [3, 10]
+    create_random_walks(graph_nx, graphs, ps, qs, walk_lengths, num_walks_list, dataset_name)
