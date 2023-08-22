@@ -251,7 +251,7 @@ def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_nu
                           batch_size=512)
     cols = ['input_ids', 'attention_mask']
     dataset = dataset.remove_columns(["sent", 'token_type_ids', 'Unnamed: 0'])
-    dataset.set_format(type='torch', columns= cols + ['time', 'p', 'q'])
+    dataset.set_format(type='torch', columns=cols + ['time', 'p', 'q'])
 
     labels = dataset['input_ids']
     mask = dataset['attention_mask']
@@ -267,8 +267,8 @@ def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_nu
     input_ids[selection[:, 0], selection[:, 1]] = graph_tokenizer.mask_token_id
 
     d = Temporal_Graph_Dataset({'input_ids': input_ids, 'attention_mask': mask, 'labels': labels,
-                     'temporal_labels': temporal_labels
-                     })
+                                'temporal_labels': temporal_labels
+                                })
     loader = torch.utils.data.DataLoader(d, batch_size=32, shuffle=True)
 
     config = BertConfig(
@@ -340,7 +340,7 @@ def train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_n
                           batch_size=512)
     cols = ['input_ids', 'attention_mask']
     dataset = dataset.remove_columns(["sent", 'token_type_ids', 'Unnamed: 0'])
-    dataset.set_format(type='torch', columns= cols + ['time', 'p', 'q'])
+    dataset.set_format(type='torch', columns=cols + ['time', 'p', 'q'])
 
     num_classes = len(set(dataset['time']))
     temporal_labels = dataset['time']

@@ -9,7 +9,7 @@ from tqdm import tqdm
 from graphert.processing_data import load_dataset
 
 
-def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps:list, qs: list, walk_lengths: list, num_walks_list: list,
+def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps: list, qs: list, walk_lengths: list, num_walks_list: list,
                         dataset_name: str):
     cc_nodes = sorted(nx.connected_components(graph_nx.to_undirected()), key=len, reverse=True)[0]  # biggest cc
     for walk_len in walk_lengths:
@@ -26,7 +26,8 @@ def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps:list, qs: list, wal
                         [node for node in graph if node not in cc_nodes])  # remove nodes not in the biggest cc
                     graph = graph.to_undirected()
                     nodes = nodes.union(graph.nodes())
-                    n2v_model = Node2Vec(graph, num_walks=num_walks, walk_length=walk_len, p=p, q=q, workers=4, quiet=True)
+                    n2v_model = Node2Vec(graph, num_walks=num_walks, walk_length=walk_len, p=p, q=q, workers=4,
+                                         quiet=True)
                     sents = [" ".join(sent) for sent in n2v_model.walks]
                     data_df_list.append(
                         pd.DataFrame(np.array([sents, [time] * len(sents), [p] * len(sents), [q] * len(sents)]).T,
@@ -34,6 +35,7 @@ def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps:list, qs: list, wal
 
             data_df = pd.concat(data_df_list)
             data_df.to_csv(file_path)
+
 
 if __name__ == '__main__':
     # create corpus
@@ -47,7 +49,6 @@ if __name__ == '__main__':
     graphs = temporal_graph.get_temporal_graphs(min_degree=5)
 
     graphs = {i: v for i, (k, v) in enumerate(graphs.items())}
-
 
     qs = [0.25, 0.5, 1, 2, 4]
     ps = [0.25, 0.5, 1, 2, 4]
