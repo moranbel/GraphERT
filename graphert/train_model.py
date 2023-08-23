@@ -136,6 +136,17 @@ class BertForMlmTemporalClassification(BertPreTrainedModel):
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
 
+def get_graph_tokenizer(dataset_name, walk_len):
+    graph_tokenizer = PreTrainedTokenizerFast(
+        tokenizer_file=f'datasets/{dataset_name}/models/graph_tokenizer.tokenizer.json', max_len=walk_len)
+    graph_tokenizer.unk_token = "[UNK]"
+    graph_tokenizer.sep_token = "[SEP]"
+    graph_tokenizer.pad_token = "[PAD]"
+    graph_tokenizer.cls_token = "[CLS]"
+    graph_tokenizer.mask_token = "[MASK]"
+    return graph_tokenizer
+
+
 def train_mlm(dataset, graph_tokenizer, dataset_name):
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=graph_tokenizer, mlm=True, mlm_probability=0.15)
@@ -179,13 +190,7 @@ def train_2_steps_model(random_walk_path, dataset_name, walk_len, sample_num=Non
     # bert model for classification, based on mlm
 
     data_df = pd.read_csv(random_walk_path, index_col=None)
-    graph_tokenizer = PreTrainedTokenizerFast(
-        tokenizer_file=f'datasets/{dataset_name}/models/graph_tokenizer.tokenizer.json', max_len=walk_len)
-    graph_tokenizer.unk_token = "[UNK]"
-    graph_tokenizer.sep_token = "[SEP]"
-    graph_tokenizer.pad_token = "[PAD]"
-    graph_tokenizer.cls_token = "[CLS]"
-    graph_tokenizer.mask_token = "[MASK]"
+    graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
     num_classes = len(set(data_df['time']))
 
     if sample_num:
@@ -235,13 +240,7 @@ def train_2_steps_model(random_walk_path, dataset_name, walk_len, sample_num=Non
 def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=None):
     # train mlm and temporal model together (TM + MLM)
     data_df = pd.read_csv(random_walk_path, index_col=None)
-    graph_tokenizer = PreTrainedTokenizerFast(
-        tokenizer_file=f'datasets/{dataset_name}/models/graph_tokenizer.tokenizer.json', max_len=walk_len)
-    graph_tokenizer.unk_token = "[UNK]"
-    graph_tokenizer.sep_token = "[SEP]"
-    graph_tokenizer.pad_token = "[PAD]"
-    graph_tokenizer.cls_token = "[CLS]"
-    graph_tokenizer.mask_token = "[MASK]"
+    graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
 
     if sample_num:
         data_df = data_df.sample(sample_num)
@@ -256,7 +255,7 @@ def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_nu
     labels = dataset['input_ids']
     mask = dataset['attention_mask']
     temporal_labels = dataset['time']
-    num_classes = len(set(dataset['time']))
+    num_classes = len(set(dataset['time'].numpy()))
 
     input_ids = labels.detach().clone()
     rand = torch.rand(input_ids.shape)
@@ -324,13 +323,7 @@ def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_nu
 def train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=None):
     # train only temporal part (TM)
     data_df = pd.read_csv(random_walk_path, index_col=None)
-    graph_tokenizer = PreTrainedTokenizerFast(
-        tokenizer_file=f'datasets/{dataset_name}/models/graph_tokenizer.tokenizer.json', max_len=walk_len)
-    graph_tokenizer.unk_token = "[UNK]"
-    graph_tokenizer.sep_token = "[SEP]"
-    graph_tokenizer.pad_token = "[PAD]"
-    graph_tokenizer.cls_token = "[CLS]"
-    graph_tokenizer.mask_token = "[MASK]"
+    graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
 
     if sample_num:
         data_df = data_df.sample(sample_num)
@@ -342,7 +335,7 @@ def train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_n
     dataset = dataset.remove_columns(["sent", 'token_type_ids', 'Unnamed: 0'])
     dataset.set_format(type='torch', columns=cols + ['time', 'p', 'q'])
 
-    num_classes = len(set(dataset['time']))
+    num_classes = len(set(dataset['time'].numpy()))
     temporal_labels = dataset['time']
     loader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
 
@@ -382,7 +375,7 @@ if __name__ == '__main__':
     dataset_name = 'facebook'
     walk_len = 32
     random_walk_path = f'datasets/{dataset_name}/paths_walk_len_32_num_walks_3.csv'
-    train_graph_tokenizer(random_walk_path, dataset_name, walk_len, sample_num=10_000)
-    train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=1000)
-    train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=1000)
-    train_2_steps_model(random_walk_path, dataset_name, walk_len, sample_num=1000)
+    train_graph_tokenizer(random_walk_path, dataset_name, walk_len)
+    train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=100_000)
+    train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=100_000)
+    train_2_steps_model(random_walk_path, dataset_name, walk_len, sample_num=100_000)
