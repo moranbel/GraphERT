@@ -1,5 +1,6 @@
 networkx
 numpy
+torch
 pandas
 gensim
 node2vec
@@ -8,3 +9,6 @@ holoviews
 scikit-learn
 scipy
 python-dateutil
+datasets
+tokenizers
+transformers

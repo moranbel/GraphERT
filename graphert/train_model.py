@@ -372,7 +372,7 @@ def train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_n
 
 
 if __name__ == '__main__':
-    dataset_name = 'facebook'
+    dataset_name = 'game_of_thrones'
     walk_len = 32
     random_walk_path = f'datasets/{dataset_name}/paths_walk_len_32_num_walks_3.csv'
     train_graph_tokenizer(random_walk_path, dataset_name, walk_len)

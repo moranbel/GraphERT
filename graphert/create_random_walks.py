@@ -1,4 +1,6 @@
 import itertools
+import pickle
+from os.path import join
 
 from node2vec import Node2Vec
 import pandas as pd
@@ -9,9 +11,8 @@ from tqdm import tqdm
 from graphert.processing_data import load_dataset
 
 
-def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps: list, qs: list, walk_lengths: list, num_walks_list: list,
-                        dataset_name: str):
-    cc_nodes = sorted(nx.connected_components(graph_nx.to_undirected()), key=len, reverse=True)[0]  # biggest cc
+def create_random_walks(graphs: dict, ps: list, qs: list, walk_lengths: list, num_walks_list: list,
+                        dataset_name: str, filter_cc_nodes:list=None):
     for walk_len in walk_lengths:
         for num_walks in num_walks_list:
             print(f"walk_len={walk_len}, num_walks={num_walks}")
@@ -22,8 +23,9 @@ def create_random_walks(graph_nx: nx.Graph, graphs: dict, ps: list, qs: list, wa
             for i, (time, graph) in enumerate(list(graphs.items())):
                 print(time)
                 for (p, q) in tqdm(p_q_pairs, total=len(p_q_pairs)):
-                    graph.remove_nodes_from(
-                        [node for node in graph if node not in cc_nodes])  # remove nodes not in the biggest cc
+                    if filter_cc_nodes:
+                        graph.remove_nodes_from(
+                            [node for node in graph if node not in filter_cc_nodes])  # remove nodes not in the biggest cc
                     graph = graph.to_undirected()
                     nodes = nodes.union(graph.nodes())
                     n2v_model = Node2Vec(graph, num_walks=num_walks, walk_length=walk_len, p=p, q=q, workers=4,
@@ -41,12 +43,18 @@ if __name__ == '__main__':
     # create corpus
     # sent, label
     # load facebook
-    dataset_name = 'facebook'
-    graph_path = 'data/facebook/facebook-wall.txt'
-    graph_df = pd.read_table(graph_path, sep='\t', header=None)
-    graph_df.columns = ['source', 'target', 'time']
-    graph_nx, temporal_graph = load_dataset(graph_df, dataset_name, 'months')
-    graphs = temporal_graph.get_temporal_graphs(min_degree=5)
+    # dataset_name = 'facebook'
+    # graph_path = 'data/facebook/facebook-wall.txt'
+    # graph_df = pd.read_table(graph_path, sep='\t', header=None)
+    # graph_df.columns = ['source', 'target', 'time']
+    # graph_nx, temporal_graph = load_dataset(graph_df, dataset_name, 'months')
+    # graphs = temporal_graph.get_temporal_graphs(min_degree=5)
+    # cc_nodes = sorted(nx.connected_components(graph_nx.to_undirected()), key=len, reverse=True)[0]  # biggest cc
+
+    dataset_name = 'game_of_thrones'
+    with open(join('data', 'gameofthrones/gameofthrones_2017_graphs_dynamic.pkl'), 'rb') as f:
+        graphs = pickle.load(f)
+    cc_nodes = None
 
     graphs = {i: v for i, (k, v) in enumerate(graphs.items())}
 
@@ -54,4 +62,4 @@ if __name__ == '__main__':
     ps = [0.25, 0.5, 1, 2, 4]
     walk_lengths = [32, 64]
     num_walks_list = [3, 10]
-    create_random_walks(graph_nx, graphs, ps, qs, walk_lengths, num_walks_list, dataset_name)
+    create_random_walks(graphs, ps, qs, walk_lengths, num_walks_list, dataset_name, cc_nodes)

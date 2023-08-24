@@ -2,6 +2,7 @@ import torch
 import sklearn
 from datasets import Dataset
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 import seaborn as sns
 
@@ -43,6 +44,7 @@ def get_embeddings_by_paths_average(data_df, model_path, dataset_name, walk_len)
     graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
     t_emb_mean = dict()
     t_emb_weighted_mean = dict()
+    t_prob = dict()
     for t, t_df in tqdm(data_df.groupby('time'), total=max(data_df['time'])):
         dataset_t = Dataset.from_pandas(t_df)
         dataset_t = dataset_t.map(lambda examples: tokenize_function(graph_tokenizer, examples, 'sent'), batched=True,
@@ -57,14 +59,24 @@ def get_embeddings_by_paths_average(data_df, model_path, dataset_name, walk_len)
         t_emb_mean[t] = dataset_t['cls_emb'].numpy().mean(axis=0)
         t_emb_weighted_mean[t] = dataset_t['probs'].unsqueeze(axis=0).matmul(
             dataset_t['cls_emb']).squeeze().cpu().detach().numpy()
-    return t_emb_mean, t_emb_weighted_mean
+        t_prob[t] = dataset_t['probs'].numpy().mean(axis=0)
+
+    return t_emb_mean, t_emb_weighted_mean, t_prob
 
 
 if __name__ == '__main__':
     dataset_name = 'facebook'
-    model_path = f'datasets/{dataset_name}/models/time_classification_after_masking'
+    model_path = f'datasets/{dataset_name}/models/mlm_and_temporal_model'
     # get temporal embeddings by the last layer
     temporal_embeddings = get_temporal_embeddings(model_path)
+
+    #get temporal embeddings by averaging the paths embeddings per time
+    random_walk_path = f'datasets/{dataset_name}/paths_walk_len_32_num_walks_3.csv'
+    data_df = pd.read_csv(random_walk_path, index_col=None)
+    t_emb_mean, t_emb_weighted_mean, t_prob = get_embeddings_by_paths_average(data_df, model_path, dataset_name, walk_len=32)
+    t_emb_mean, t_emb_weighted_mean = np.array(list(t_emb_mean.values())), np.array(list(t_emb_weighted_mean.values()))
+
+    #plot similarity
     print("Temporal similarity plot:")
     similarity = sklearn.metrics.pairwise.cosine_similarity(temporal_embeddings, temporal_embeddings)
     print(sns.heatmap(similarity, vmin=0, vmax=1))
