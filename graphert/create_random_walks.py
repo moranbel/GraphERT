@@ -43,18 +43,13 @@ if __name__ == '__main__':
     # create corpus
     # sent, label
     # load facebook
-    # dataset_name = 'facebook'
-    # graph_path = 'data/facebook/facebook-wall.txt'
-    # graph_df = pd.read_table(graph_path, sep='\t', header=None)
-    # graph_df.columns = ['source', 'target', 'time']
-    # graph_nx, temporal_graph = load_dataset(graph_df, dataset_name, 'months')
-    # graphs = temporal_graph.get_temporal_graphs(min_degree=5)
-    # cc_nodes = sorted(nx.connected_components(graph_nx.to_undirected()), key=len, reverse=True)[0]  # biggest cc
-
-    dataset_name = 'game_of_thrones'
-    with open(join('data', 'gameofthrones/gameofthrones_2017_graphs_dynamic.pkl'), 'rb') as f:
-        graphs = pickle.load(f)
-    cc_nodes = None
+    dataset_name = 'facebook'
+    graph_path = 'data/facebook/facebook-wall.txt'
+    graph_df = pd.read_table(graph_path, sep='\t', header=None)
+    graph_df.columns = ['source', 'target', 'time']
+    graph_nx, temporal_graph = load_dataset(graph_df, dataset_name, 'months')
+    graphs = temporal_graph.get_temporal_graphs(min_degree=5)
+    cc_nodes = sorted(nx.connected_components(graph_nx.to_undirected()), key=len, reverse=True)[0] # biggest cc
 
     graphs = {i: v for i, (k, v) in enumerate(graphs.items())}
 

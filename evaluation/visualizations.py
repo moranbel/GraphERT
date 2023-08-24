@@ -9,6 +9,7 @@ import datetime
 import holoviews as hv
 
 from graphert.temporal_embeddings import get_temporal_embeddings, get_embeddings_by_paths_average
+from graphert.train_model import BertForMlmTemporalClassification, BertForTemporalClassification
 
 hv.extension('bokeh')
 

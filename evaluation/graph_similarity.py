@@ -18,7 +18,7 @@ def graph2graph_similarity(graphs_vectors):
         # g1 = g1.mean(axis=0)
         for t2, g2 in graphs_vectors.items():
             # g2 = g2.mean(axis=0)
-            sim = spatial.distance.cosine(g1, g2)
+            sim =  1 - spatial.distance.cosine(g1, g2)
             similarity_matrix.loc[t1][t2] = sim
     return similarity_matrix
 
