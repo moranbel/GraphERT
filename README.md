@@ -6,7 +6,7 @@ This repository provides a reference implementation of *GraphERT* as described i
 > CIKM’23 – October 2023, Birmingham, United Kingdom. <br>
 > [Link]()
 
-<img src="https://i.ibb.co/MZsYM9w/GraphERT.png" width="600">
+<img src="https://i.ibb.co/MZsYM9w/GraphERT.png" width="1000">
 
 ### Data ###
 All our data is accessible in the "data" folder. 
@@ -84,10 +84,12 @@ use the `temporal_embeddings.py` file, define the trained model path:
 ### Evaluation and visualizations ###
 To evaluate the trained temporal graph embeddings on graphs similarity and anomaly detection tasks follow `similarity_ranknig_measures.py` and `anomaly_evaluation.py`.
 Use `visualizations.py` to create temporal similarity matrix:
-<img src="https://i.ibb.co/xmqDmZR/facebook-g2g.png" width="600">
+
+<img src="https://i.ibb.co/xmqDmZR/facebook-g2g.png" width="400">
 
 and trend analysis:
-<img src="https://i.ibb.co/GQKRVjc/Screenshot-2023-08-26-at-12-43-16.png" width="600">
+
+<img src="https://i.ibb.co/GQKRVjc/Screenshot-2023-08-26-at-12-43-16.png" width="400">
 
 
 ### Citing ###
