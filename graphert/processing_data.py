@@ -148,7 +148,7 @@ if __name__ == '__main__':
     graph_path = 'data/facebook/facebook-wall.txt'
     graph_df = pd.read_table(graph_path, sep='\t', header=None)
     graph_df.columns = ['source', 'target', 'time']
-    graph_nx, temporal_graph = load_dataset(graph_df, dataset_name, 'months')
+    graph_nx, temporal_graph = load_dataset(graph_df, dataset_name, time_granularity='months')
     graphs = temporal_graph.get_temporal_graphs(min_degree=5)
     print(graphs)
 
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     #
     # load game of thrones
     # dataset_name = 'game_of_thrones'
-    # with open(join('data', 'gameofthrones/gameofthrones_2017_graphs_dynamic.pkl'), 'rb') as f:
+    # with open(join('data', 'game_of_thrones/gameofthrones_2017_graphs_dynamic.pkl'), 'rb') as f:
     #     graphs = pickle.load(f)
     #
     # #load formula1
