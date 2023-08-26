@@ -20,7 +20,7 @@ The data should include - source node, target node, time of interaction, weight(
 	
 	node1_id_int node2_id_int time_timestamp <weight_float, optional>
 
-To create temporal graphs structure as dict, with time as key and nx.Graph as value, use `processing_data` file, 
+To create temporal graphs structure as dict, with time as key and nx.Graph as value, use `processing_data.py` file, 
 with examples of creating the data for each dataset- facebook, enron, game of thrones and formula. 
 
 ```python
