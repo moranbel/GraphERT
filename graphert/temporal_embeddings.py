@@ -11,6 +11,7 @@ from graphert.train_model import get_graph_tokenizer, tokenize_function, BertFor
 
 
 def cls_emb(model, examples, t):
+    # get per path the cls embedding and the probability for the gt time step
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     outputs = model.bert(input_ids=examples['input_ids'].to(device),
                          attention_mask=examples['attention_mask'].to(device))
@@ -23,20 +24,28 @@ def cls_emb(model, examples, t):
 
 
 def get_temporal_embeddings(model_path):
+    '''
+        get temporal embeddings by the last layer (TXd)
+    '''
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = torch.load(model_path, map_location=device)
     model.eval().to(device)
     return model.classifier.weight.cpu().detach().numpy()
 
 
-def get_embeddings_by_paths_average(data_df, model_path, dataset_name, walk_len):
+def get_embeddings_by_paths_average(data_df: pd.DataFrame, model_path: str, dataset_name: str, walk_len: int):
     '''
     get the embeddings by averaging the embeddings of all paths in each time
-    :param data_df:
-    :param model_path:
+    :param data_df: Pd.DataFrame of the random_walk_path csv
+    :param model_path: torch ckpt trained model
     :param dataset_name:
     :param walk_len:
     :return:
+    t_emb_mean- using cls embedding of each path and averaging them per time. np.array- TXd
+    t_prob- the probability for the true time step per path (using the softmax layer of the classification)
+    t_emb_weighted_mean- using cls embedding of each path and average them with a weight by the probability of each time.
+    If a path has high probability to be classified with the time step, it means this path better represent the time step,
+    that is why we want to use its embedding with the assigned higher probability. np.array- TXd
     '''
     model = torch.load(model_path)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -67,16 +76,17 @@ def get_embeddings_by_paths_average(data_df, model_path, dataset_name, walk_len)
 if __name__ == '__main__':
     dataset_name = 'facebook'
     model_path = f'datasets/{dataset_name}/models/mlm_and_temporal_model'
-    # get temporal embeddings by the last layer
+    # get temporal embeddings by the last layer (TXd)
     temporal_embeddings = get_temporal_embeddings(model_path)
 
-    #get temporal embeddings by averaging the paths embeddings per time
+    # get temporal embeddings by averaging the paths embeddings per time
     random_walk_path = f'datasets/{dataset_name}/paths_walk_len_32_num_walks_3.csv'
     data_df = pd.read_csv(random_walk_path, index_col=None)
-    t_emb_mean, t_emb_weighted_mean, t_prob = get_embeddings_by_paths_average(data_df, model_path, dataset_name, walk_len=32)
+    t_emb_mean, t_emb_weighted_mean, t_prob = get_embeddings_by_paths_average(data_df, model_path, dataset_name,
+                                                                              walk_len=32)
     t_emb_mean, t_emb_weighted_mean = np.array(list(t_emb_mean.values())), np.array(list(t_emb_weighted_mean.values()))
 
-    #plot similarity
+    # plot similarity
     print("Temporal similarity plot:")
     similarity = sklearn.metrics.pairwise.cosine_similarity(temporal_embeddings, temporal_embeddings)
     print(sns.heatmap(similarity, vmin=0, vmax=1))

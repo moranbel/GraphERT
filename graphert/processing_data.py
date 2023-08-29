@@ -9,10 +9,10 @@ import pickle
 
 
 class TemporalGraph():
-    def __init__(self, data, time_granularity, dataset_name):
+    def __init__(self, data: pd.DataFrame, time_granularity: str, dataset_name: str):
         '''
         :param data: DataFrame- source, target, time, weight columns
-        :param time_granularity: 'day', 'week', 'month', 'year' or 'hour'
+        :param time_granularity: 'days', 'weeks', 'months', 'years' or 'hours'
         '''
         data['day'] = data['time'].apply(lambda timestamp: (datetime.utcfromtimestamp(timestamp)).day)
         data['week'] = data['time'].apply(
@@ -43,14 +43,14 @@ class TemporalGraph():
         self.nodes = g.nodes()
         return g
 
-    def filter_nodes(self, thresh=5):
+    def filter_nodes(self, thresh: int = 5):
         nodes2filter = [node for node, degree in self.static_graph.degree() if degree < thresh]
         return nodes2filter
 
-    def get_temporal_graphs(self, min_degree, mode='dynamic'):
+    def get_temporal_graphs(self, min_degree: int, mode: str = 'dynamic') -> dict:
         '''
 
-        :param filter_nodes: int.  filter nodes with degree<min_degree in all time steps
+        :param min_degree: int.  filter nodes with degree<min_degree in all time steps
         :param mode: if not 'dynamic', add all nodes to the current time step without edges
         :return: dictionary. key- time step, value- nx.Graph
         '''
@@ -78,23 +78,7 @@ class TemporalGraph():
         elif 'year' in self.time_columns:
             return datetime(year=x.year, month=1, day=1)
 
-    @staticmethod
-    def _time_weight(x, t, time_granularity):
-        w = x.weight
-        delta_t_in_sec = (t - x['time_index']).total_seconds()
-        if time_granularity == 'hours':
-            delta_t = delta_t_in_sec / 3600
-        elif time_granularity == 'days':
-            delta_t = delta_t_in_sec / 3600 / 24
-        elif time_granularity == 'weeks':
-            delta_t = delta_t_in_sec / 3600 / 24 / 7
-        elif time_granularity == 'months':
-            delta_t = delta_t_in_sec / 3600 / 24 / 30
-        elif time_granularity == 'years':
-            delta_t = delta_t_in_sec / 3600 / 24 / 365
-        return w * np.log2(1 + 1 / (delta_t + 1))
-
-    def get_date(self, t):
+    def get_date(self, t) -> datetime:
         time_dict = dict(zip(self.time_columns, t if type(t) == tuple else [t]))
         if self.time_granularity == 'hours':
             return datetime(year=time_dict['year'], month=time_dict['month'], day=time_dict['day'],
@@ -112,7 +96,7 @@ class TemporalGraph():
             raise Exception("not valid time granularity")
 
     @staticmethod
-    def _get_time_columns(time_granularity):
+    def _get_time_columns(time_granularity: str):
         if time_granularity == 'hours':
             group_time = ['year', 'month', 'day', 'hour']
             step = timedelta(hours=1)
@@ -133,7 +117,14 @@ class TemporalGraph():
         return group_time, step
 
 
-def load_dataset(graph_df, dataset_name, time_granularity):
+def load_dataset(graph_df: pd.DataFrame, dataset_name: str, time_granularity: str) -> tuple[nx.Graph, TemporalGraph]:
+    '''
+
+    :param graph_df:  DataFrame- source, target, time, weight columns
+    :param dataset_name: name of the dataset
+    :param time_granularity: the time granularity of the graphs time steps- can be 'days', 'weeks', 'months', 'years' or 'hours'
+    :return:
+    '''
     temporal_g = TemporalGraph(data=graph_df, time_granularity=time_granularity, dataset_name=dataset_name)
     graph_df = temporal_g.data
     graph_df['time'] = graph_df['time_index']

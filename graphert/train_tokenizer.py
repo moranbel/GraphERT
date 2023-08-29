@@ -11,7 +11,15 @@ from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 
 
-def train_graph_tokenizer(random_walks_file_path, dataset_name, walk_len, sample_num=None):
+def train_graph_tokenizer(random_walks_file_path: str, dataset_name: str, walk_len: int, sample_num: int=None):
+    '''
+    train WordLevel (node-level) tokenizer
+    :param random_walks_file_path: the file path to load the random walks corpus (created in create_random_walks.py)
+    :param dataset_name:
+    :param walk_len: length of the walk, which defined the length of the sentence for the tokenizer.
+    :param sample_num: if we want to train the tokenizer based on a sample
+    :return:
+    '''
     # create files for tokenizer training
     data_df = pd.read_csv(random_walks_file_path)
     if sample_num:

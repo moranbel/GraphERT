@@ -13,6 +13,20 @@ from graphert.processing_data import load_dataset
 
 def create_random_walks(graphs: dict, ps: list, qs: list, walk_lengths: list, num_walks_list: list,
                         dataset_name: str, filter_cc_nodes:list=None):
+    '''
+    Create pd.Dataframe with random walks as sentences 'sent', and time step as 'label'.
+    Creating the corpus per combination of walk_length (sentence length) and num walks starting from each one of the nodes.
+    In same corpus we will have different p and q parameters in order to traverse the graph in multiple options.
+
+    :param graphs: Graph per time step. dictionary. key- time step, value- nx.Graph
+    :param ps: list of p (the return parameter) values.
+    :param qs: list of q (the in-out parameter) values.
+    :param walk_lengths: list of walk lengths.
+    :param num_walks_list: list of the number of random walks starting from each one of the nodes.
+    :param dataset_name: name of the dataset
+    :param filter_cc_nodes: provide list of nodes to filter if we want to exclude nodes not in the biggest connected component.
+    :return:
+    '''
     for walk_len in walk_lengths:
         for num_walks in num_walks_list:
             print(f"walk_len={walk_len}, num_walks={num_walks}")

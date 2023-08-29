@@ -9,14 +9,13 @@ from graphert.temporal_embeddings import get_temporal_embeddings
 from graphert.train_model import BertForMlmTemporalClassification, BertForTemporalClassification
 
 
-
-def evaluate_anomalies(embs_vectors, times, anoms, google_df=None):
+def evaluate_anomalies(embs_vectors: np.array, times: list, anoms: list, google_df: pd.DataFrame = None):
     '''
 
     :param embs_vectors: temporal graph vectors for each time step. numpy array of shape (number of timesteps, graph vector dimension size)
-    :param days: list of datetime of all graph's times
+    :param times: list of datetime of all graph's times
     :param anoms: list of anomalies times
-    :param google: google trend data in case we have
+    :param google: google trend data in case we have, with 'Day' and 'google' columns to represent the volume per day.
     :return:
     '''
     measures_df = pd.DataFrame(columns=['K', 'Recall', 'Precision'])
@@ -35,6 +34,7 @@ def evaluate_anomalies(embs_vectors, times, anoms, google_df=None):
         corr, pval = spearmanr(dist, google_df['google'].values)
         print(f'Spearman correlation: {corr}, p-value: {pval}')
     print(measures_df)
+
 
 if __name__ == "__main__":
     dataset_name = 'game_of_thrones'

@@ -6,7 +6,15 @@ from graphert.processing_data import load_dataset
 from graphert.temporal_embeddings import get_temporal_embeddings
 from graphert.train_model import BertForMlmTemporalClassification, BertForTemporalClassification
 
-def precision_at_k(predicted, real, k):
+
+def precision_at_k(predicted: pd.DataFrame, real: pd.DataFrame, k: int):
+    '''
+
+    :param predicted: predicted similarity matrix by cosine similarity on the graphs embeddings
+    :param real: true similarity matrix by MCS measure on the graphs pairs
+    :param k: top k
+    :return: average precision across the time steps
+    '''
     precision = []
     for t, graph in predicted.iterrows():
         top_predicted = graph.sort_values(ascending=False).index[1:k + 1]
@@ -15,7 +23,13 @@ def precision_at_k(predicted, real, k):
     return np.mean(precision)
 
 
-def MAP_at_k(predicted, real, k):
+def MAP_at_k(predicted: pd.DataFrame, real: pd.DataFrame, k: int):
+    '''
+    :param predicted: predicted similarity matrix by cosine similarity on the graphs embeddings
+    :param real: true similarity matrix by MCS measure on the graphs pairs
+    :param k: top k
+    :return: average MAP across the time steps
+    '''
     average_precision = []
     for t, graph in predicted.iterrows():
         top_predicted = graph.sort_values(ascending=False).index[1:k + 1]
@@ -30,7 +44,12 @@ def MAP_at_k(predicted, real, k):
     return np.mean(average_precision)
 
 
-def MRR(predicted, real):
+def MRR(predicted: pd.DataFrame, real: pd.DataFrame):
+    '''
+    :param predicted: predicted similarity matrix by cosine similarity on the graphs embeddings
+    :param real: true similarity matrix by MCS measure on the graphs pairs
+    :return: average MRR across the time steps
+    '''
     mrr = []
     for t, graph in predicted.iterrows():
         curr_real_t = real.loc[t]
@@ -43,7 +62,14 @@ def MRR(predicted, real):
     return np.mean(mrr)
 
 
-def eval_similarity(graph_embs, times, similarity_matrix_gt):
+def eval_similarity(graph_embs: np.array, times: list, similarity_matrix_gt: pd.DataFrame):
+    '''
+    calculate all metrics - precision@k, map and mrr
+    :param graph_embs: temporal graph vectors for each time step. numpy array of shape (number of timesteps, graph vector dimension size)
+    :param times: list of datetime of all graph's times
+    :param similarity_matrix_gt: pd.DataFrame- true similarity matrix by MCS measure on the graphs pairs
+    :return: pd.DataFrame with the measures
+    '''
     graphs_dict = {}
     res_df = pd.DataFrame(columns=['metric', 'value'])
     for time, emb in enumerate(graph_embs):
@@ -75,4 +101,5 @@ if __name__ == "__main__":
     # get temporal embeddings by the last layer
     temporal_embeddings = get_temporal_embeddings(model_path)
 
-    print(eval_similarity(graph_embs=temporal_embeddings, times = list(graphs.keys()), similarity_matrix_gt=similarity_matrix_gt))
+    print(eval_similarity(graph_embs=temporal_embeddings, times=list(graphs.keys()),
+                          similarity_matrix_gt=similarity_matrix_gt))

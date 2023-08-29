@@ -33,6 +33,10 @@ class Temporal_Graph_Dataset(torch.utils.data.Dataset):
 
 
 class BertForTemporalClassification(BertPreTrainedModel):
+    '''
+    Train a model only for temporal classification with CrossEntropyLoss
+    '''
+
     def __init__(self, config):
         super().__init__(config)
         self.temporal_num_labels = config.temporal_num_labels
@@ -80,7 +84,13 @@ class BertForTemporalClassification(BertPreTrainedModel):
 
 
 class BertForMlmTemporalClassification(BertPreTrainedModel):
-    def __init__(self, config, temporal_weight=5):
+    '''
+        Train a model MLM for node masking and temporal classification.
+        Use the temporal_weight to control the tradeoff between the two.
+
+    '''
+
+    def __init__(self, config):
         super().__init__(config)
         self.temporal_num_labels = config.temporal_num_labels
         self.vocab_size = config.vocab_size
@@ -89,7 +99,7 @@ class BertForMlmTemporalClassification(BertPreTrainedModel):
         self.classifier = nn.Linear(config.hidden_size, config.temporal_num_labels)
         self.mlm = BertOnlyMLMHead(config)
         self.init_weights()
-        self.temporal_weight = temporal_weight
+        self.temporal_weight = config.temporal_weight
 
     def forward(
             self,
@@ -133,7 +143,7 @@ class BertForMlmTemporalClassification(BertPreTrainedModel):
 
         outputs = (loss, masked_lm_loss, temporal_loss) + outputs
 
-        return outputs  # (loss), logits, (hidden_states), (attentions)
+        return outputs
 
 
 def get_graph_tokenizer(dataset_name, walk_len):
@@ -147,7 +157,10 @@ def get_graph_tokenizer(dataset_name, walk_len):
     return graph_tokenizer
 
 
-def train_mlm(dataset, graph_tokenizer, dataset_name):
+def train_mlm(dataset: Dataset, graph_tokenizer: PreTrainedTokenizerFast, dataset_name: str):
+    '''
+    Train only masking model for node-level making
+    '''
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=graph_tokenizer, mlm=True, mlm_probability=0.15)
 
@@ -187,7 +200,13 @@ def tokenize_function(graph_tokenizer, examples, sent_col_name):
 
 
 def train_2_steps_model(random_walk_path, dataset_name, walk_len, sample_num=None):
-    # bert model for classification, based on mlm
+    '''
+    Train mlm and temporal model one after another, first train the mlm, then the classification. save torch model
+    :param random_walk_path: file path to load the random walks corpus (created in create_random_walks.py)
+    :param dataset_name:
+    :param walk_len: length of a random walk, define the length of the sequence for the model
+    :param sample_num: train using a sample number
+    '''
 
     data_df = pd.read_csv(random_walk_path, index_col=None)
     graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
@@ -237,8 +256,14 @@ def train_2_steps_model(random_walk_path, dataset_name, walk_len, sample_num=Non
     torch.save(model, f'datasets/{dataset_name}/models/time_classification_after_masking')
 
 
-def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=None):
-    # train mlm and temporal model together (TM + MLM)
+def train_mlm_temporal_model(random_walk_path: str, dataset_name: str, walk_len: int, sample_num: int = None):
+    '''
+    Train mlm and temporal model together (TM + MLM), save torch model
+    :param random_walk_path: file path to load the random walks corpus (created in create_random_walks.py)
+    :param dataset_name:
+    :param walk_len: length of a random walk, define the length of the sequence for the model
+    :param sample_num: train using a sample number
+    '''
     data_df = pd.read_csv(random_walk_path, index_col=None)
     graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
 
@@ -277,6 +302,7 @@ def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_nu
         num_attention_heads=6,
         max_position_embeddings=walk_len + 4,
         temporal_num_labels=num_classes,
+        temporal_weight=5
     )
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -320,8 +346,15 @@ def train_mlm_temporal_model(random_walk_path, dataset_name, walk_len, sample_nu
     torch.save(model, f'datasets/{dataset_name}/models/mlm_and_temporal_model')
 
 
-def train_only_temporal_model(random_walk_path, dataset_name, walk_len, sample_num=None):
-    # train only temporal part (TM)
+def train_only_temporal_model(random_walk_path: str, dataset_name: str, walk_len: int, sample_num: int = None):
+    '''
+    Train only temporal part (TM), save torch model
+    :param random_walk_path: file path to load the random walks corpus (created in create_random_walks.py)
+    :param dataset_name:
+    :param walk_len: length of a random walk, define the length of the sequence for the model
+    :param sample_num: train using a sample number
+
+    '''
     data_df = pd.read_csv(random_walk_path, index_col=None)
     graph_tokenizer = get_graph_tokenizer(dataset_name, walk_len)
 
